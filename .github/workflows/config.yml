@@ -18,7 +18,8 @@ jobs:
           echo "AWS_REGION=${{ vars.AWS_REGION }}" >> .env
           echo "S3_BUCKET_NAME=${{ vars.IMG_BUCKET }}" >> .env
           cat .env
-
+      - name: Current Directory
+        run: pwd
       - name: Debug - List Files
         run: ls -la
 

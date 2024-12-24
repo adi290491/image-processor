@@ -27,6 +27,10 @@ jobs:
         run: pwd
       - name: Debug - List Files
         run: ls -la
+      - name: Check .env File Permissions
+        run: |
+          ls -l .env
+          stat .env
 
       # - name: Rename .env for Upload
       #   run: mv .env env-file

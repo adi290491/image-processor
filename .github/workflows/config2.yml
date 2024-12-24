@@ -1,23 +1,33 @@
 name: Create envfile
 
-on: [ push ]
+on:
+  workflow_dispatch:
 
 jobs:
 
   create-envfile:
  
     runs-on: ubuntu-latest
- 
     steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+        
     - name: Make envfile
       uses: SpicyPizza/create-envfile@v2.0
       with:
         envkey_DEBUG: false
-        envkey_SOME_API_KEY: "123456abcdef"
-        envkey_SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        envkey_VARIABLE: ${{ vars.SOME_ACTION_VARIABLE }}
-        some_other_variable: foobar
-        directory: <directory_name>
-        file_name: .env
+        envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        envkey_AWS_REGION: ${{ vars.AWS_REGION }}
+        envkey_S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
         fail_on_empty: false
         sort_keys: false
+        
+    - name: Debug - List Files
+      run: ls -la
+
+    - name: Upload .env File as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: .env
+        path: .env

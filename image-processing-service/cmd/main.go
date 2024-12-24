@@ -7,12 +7,17 @@ import (
 
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	vips.Startup(nil)
 	defer vips.Shutdown()
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Env error:", err)
+	}
 	server := gin.Default()
 
 	routes.RegisterEndpoints(server)

@@ -20,6 +20,7 @@ jobs:
         envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         envkey_AWS_REGION: ${{ vars.AWS_REGION }}
         envkey_S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+        directory-name: env
         fail_on_empty: false
         sort_keys: false
         

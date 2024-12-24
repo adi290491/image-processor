@@ -15,12 +15,11 @@ jobs:
     - name: Make envfile
       uses: SpicyPizza/create-envfile@v2.0
       with:
-        envkey_DEBUG: false
-        envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        envkey_AWS_REGION: ${{ vars.AWS_REGION }}
-        envkey_S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
-        directory-name: env
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ${{ vars.AWS_REGION }}
+        S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+        directory: env
         fail_on_empty: false
         sort_keys: false
         

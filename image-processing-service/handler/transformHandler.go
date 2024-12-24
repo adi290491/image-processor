@@ -10,17 +10,6 @@ import (
 
 func HandleTransform(c *gin.Context) {
 
-	// err := r.ParseMultipartForm(math.MaxInt32)
-
-	// if err != nil {
-	// 	log.Fatal("Error:", err)
-	// }
-
-	// fileHeader, err := c.BindJSON()
-	// if err != nil {
-	// 	log.Fatal("Request error:", err)
-	// }
-
 	uploadDir := "./assets/temp"
 
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
@@ -29,17 +18,8 @@ func HandleTransform(c *gin.Context) {
 		return
 	}
 
-	// tempFilePath := filepath.Join(uploadDir, fileHeader.Filename)
-
-	// err = c.SaveUploadedFile(fileHeader, tempFilePath)
-	// if err != nil {
-	// 	c.JSON(500, gin.H{"error": err})
-	// 	return
-	// }
-
 	var tr transformations.TransformationRequest
 
-	// jsondata := c.PostForm("transformations")
 	if err := c.ShouldBindJSON(&tr); err != nil {
 		c.JSON(500, gin.H{"Json Error": err})
 		return

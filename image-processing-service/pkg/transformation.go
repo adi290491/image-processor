@@ -112,32 +112,11 @@ func save(imgRef *vips.ImageRef, input string) (outputPath string, err error) {
 		return "", err
 	}
 
-	// file, err := os.Create(outputPath)
-
-	// if err != nil {
-	// 	return "", nil
-	// }
-
-	// body := &bytes.Buffer{}
-	// writer := multipart.NewWriter(body)
-
-	// //Create form field
-	// part, err := writer.CreateFormFile("file", file.Name())
-	// if err != nil {
-	// 	return "", nil
-	// }
-
-	// _, err = io.Copy(part, bytes.NewReader(imgBytes))
-
 	err = os.WriteFile(outputPath, imgBytes, 0644)
 
 	if err != nil {
 		return "", err
 	}
-
-	// if err := writer.Close(); err != nil {
-	// 	return "", err
-	// }
 
 	return outputPath, nil
 }

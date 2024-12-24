@@ -1,10 +1,13 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"mime"
 	"mime/multipart"
+	"os"
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -61,22 +64,45 @@ func exitErrorf(msg string, args ...interface{}) error {
 	return fmt.Errorf(msg+"\n", args...)
 }
 
-func UploadObject(imgFile *multipart.FileHeader) (*UploadResponse, error) {
+func getFileReader(file interface{}) (io.ReadSeeker, string, error) {
+	switch f := file.(type) {
+	case *multipart.FileHeader:
+		multipartFile, err := f.Open()
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to open multipart file: %w", err)
+		}
+		defer multipartFile.Close()
 
-	file, err := imgFile.Open()
-	if err != nil {
-		exitErrorf("File IO error: %v", err)
+		// Read content into a buffer for S3 upload
+		buf := new(bytes.Buffer)
+		if _, err := io.Copy(buf, multipartFile); err != nil {
+			return nil, "", fmt.Errorf("failed to read multipart file: %w", err)
+		}
+		return bytes.NewReader(buf.Bytes()), f.Filename, nil
+
+	case *os.File:
+		// Use os.File directly
+		fileInfo, err := f.Stat()
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to get file info: %w", err)
+		}
+		return f, fileInfo.Name(), nil
+
+	default:
+		return nil, "", fmt.Errorf("unsupported file type: %T", file)
 	}
+}
 
-	defer file.Close()
+func uploadImage(reader io.Reader, filename string) (*UploadResponse, error) {
+	// reader, filename, err := getFileReader(imgFile)
 
 	client := s3.NewFromConfig(cfg)
 
-	_, err = client.PutObject(context.TODO(), &s3.PutObjectInput{
+	_, err := client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:      aws.String(IMG_BUCKET),
-		Key:         aws.String(imgFile.Filename),
-		Body:        file,
-		ContentType: aws.String(mime.TypeByExtension(filepath.Ext(imgFile.Filename))),
+		Key:         aws.String(filename),
+		Body:        reader,
+		ContentType: aws.String(mime.TypeByExtension(filepath.Ext(filename))),
 	})
 
 	if err != nil {
@@ -86,7 +112,7 @@ func UploadObject(imgFile *multipart.FileHeader) (*UploadResponse, error) {
 
 	result, err := client.HeadObject(context.TODO(), &s3.HeadObjectInput{
 		Bucket: aws.String(IMG_BUCKET),
-		Key:    aws.String(imgFile.Filename),
+		Key:    aws.String(filename),
 	})
 
 	if err != nil {
@@ -94,7 +120,7 @@ func UploadObject(imgFile *multipart.FileHeader) (*UploadResponse, error) {
 		return &UploadResponse{nil, ""}, err
 	}
 
-	URL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", IMG_BUCKET, REGION, imgFile.Filename)
+	URL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", IMG_BUCKET, REGION, filename)
 	response := &UploadResponse{
 		Metadata: map[string]string{
 			"ContentType": aws.ToString(result.ContentType),
@@ -102,20 +128,129 @@ func UploadObject(imgFile *multipart.FileHeader) (*UploadResponse, error) {
 		},
 		Url: URL,
 	}
+
+	return response, nil
+}
+
+func UploadOriginal(imgFile *multipart.FileHeader) (*UploadResponse, error) {
+
+	multipartFile, err := imgFile.Open()
+	if err != nil {
+		exitErrorf("File IO error: %v", err)
+	}
+
+	defer multipartFile.Close()
+
+	// multipartFile, err := f.Open()
+	// 	if err != nil {
+	// 		return nil, "", fmt.Errorf("failed to open multipart file: %w", err)
+	// 	}
+	// 	defer multipartFile.Close()
+
+	// Read content into a buffer for S3 upload
+	buf := new(bytes.Buffer)
+	if _, err := io.Copy(buf, multipartFile); err != nil {
+		return nil, fmt.Errorf("failed to read multipart file: %w", err)
+	}
+	return uploadImage(bytes.NewReader(buf.Bytes()), imgFile.Filename)
+
+	// client := s3.NewFromConfig(cfg)
+
+	// _, err = client.PutObject(context.TODO(), &s3.PutObjectInput{
+	// 	Bucket:      aws.String(IMG_BUCKET),
+	// 	Key:         aws.String(imgFile.Filename),
+	// 	Body:        file,
+	// 	ContentType: aws.String(mime.TypeByExtension(filepath.Ext(imgFile.Filename))),
+	// })
+
+	// if err != nil {
+	// 	err = exitErrorf("File upload error. Failed to upload original image: %v", err)
+	// 	return &UploadResponse{nil, ""}, err
+	// }
+
+	// result, err := client.HeadObject(context.TODO(), &s3.HeadObjectInput{
+	// 	Bucket: aws.String(IMG_BUCKET),
+	// 	Key:    aws.String(imgFile.Filename),
+	// })
+
+	// if err != nil {
+	// 	err = exitErrorf("Failed to fetch metadata. Error: %v", err)
+	// 	return &UploadResponse{nil, ""}, err
+	// }
+
+	// URL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", IMG_BUCKET, REGION, imgFile.Filename)
+	// response := &UploadResponse{
+	// 	Metadata: map[string]string{
+	// 		"ContentType": aws.ToString(result.ContentType),
+	// 		"Size":        fmt.Sprintf("%d", result.ContentLength),
+	// 	},
+	// 	Url: URL,
+	// }
+
+	// return response, nil
+}
+
+func UploadTransformed(filename string) (*UploadResponse, error) {
+	// name := filepath.Base(filename)
+	file, err := os.Open(filename)
+	if err != nil {
+		exitErrorf("File IO error: %v", err)
+	}
+
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file info: %w", err)
+	}
+	return uploadImage(file, filepath.Base(fileInfo.Name()))
+
+	// client := s3.NewFromConfig(cfg)
+
+	// _, err = client.PutObject(context.TODO(), &s3.PutObjectInput{
+	// 	Bucket:      aws.String(IMG_BUCKET),
+	// 	Key:         aws.String(name),
+	// 	Body:        file,
+	// 	ContentType: aws.String(mime.TypeByExtension(filepath.Ext(name))),
+	// })
+
+	// if err != nil {
+	// 	err = exitErrorf("File upload error. Failed to upload original image: %v", err)
+	// 	return &UploadResponse{nil, ""}, err
+	// }
+
+	// result, err := client.HeadObject(context.TODO(), &s3.HeadObjectInput{
+	// 	Bucket: aws.String(IMG_BUCKET),
+	// 	Key:    aws.String(name),
+	// })
+
+	// if err != nil {
+	// 	err = exitErrorf("Failed to fetch metadata. Error: %v", err)
+	// 	return &UploadResponse{nil, ""}, err
+	// }
+
+	// URL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", IMG_BUCKET, REGION, name)
+	// response := &UploadResponse{
+	// 	Metadata: map[string]string{
+	// 		"ContentType": aws.ToString(result.ContentType),
+	// 		"Size":        fmt.Sprintf("%d", result.ContentLength),
+	// 	},
+	// 	Url: URL,
+	// }
+
 	// uploader := s3manager.NewUploader(sess)
 
 	// resp, err := uploader.Upload(&s3manager.UploadInput{
-	// 	Bucket: aws.String(ORIG_IMG_BKT),
-	// 	Key:    aws.String(imgFile.Filename),
+	// 	Bucket: aws.String(TRANSFORMED_IMG_BKT),
+	// 	Key:    aws.String(file.Name()),
 	// 	Body:   file,
 	// })
 
 	// if err != nil {
-	// 	exitErrorf("File upload error. Failed to upload original image: %v", err)
+	// 	exitErrorf("File upload error. Failed to upload processed image: %v", err)
 	// }
 
-	// return resp, nil'
-	return response, nil
+	// return response, nil
 }
 
 func GetImage(objectKey string) (*s3.GetObjectOutput, error) {
@@ -145,19 +280,19 @@ func ListAllImages(ctx context.Context, pageNum, limit int32) (imageList *ImageL
 
 	images := []UploadResponse{}
 
-	currPage := 1
+	currPage := 0
 	imageList = &ImageListResponse{}
 	for paginator.HasMorePages() && currPage <= int(pageNum) {
 		res, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, err
 		}
-
+		currPage++
 		if currPage != int(pageNum) {
 			continue
 		}
 		imageList.Page = currPage
-		currPage++
+
 		imageList.NextToken = *res.NextContinuationToken
 
 		for _, img := range res.Contents {

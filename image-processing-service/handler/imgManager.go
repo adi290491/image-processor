@@ -19,7 +19,7 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	response, err := client.UploadObject(fileHeader)
+	response, err := client.UploadOriginal(fileHeader)
 
 	if err != nil {
 		HandleError(c, fmt.Errorf("s3 error. Failed to upload image: %v", err), 500)

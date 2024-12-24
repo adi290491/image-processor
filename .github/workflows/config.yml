@@ -6,29 +6,34 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    defaults:
-     run:
-       working-directory: ./env
+
     steps:
+      - name: Enable Debug Logs
+        run: echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
       - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Create .env File
         run: |
-          touch env/.env
+          touch .env
           echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
           echo "AWS_REGION=${{ vars.AWS_REGION }}" >> .env
           echo "S3_BUCKET_NAME=${{ vars.IMG_BUCKET }}" >> .env
           cat .env
-      - name: Current Directory
-        run: pwd
+
       - name: Debug - List Files
         run: ls -la
+
+      - name: Rename .env for Upload
+        run: mv .env env-file
 
       - name: Upload .env File as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: .env
-          path: env/.env
+          name: env-file
+          path: env-file
           if-no-files-found: error
+          
+      - name: Clean Up Renamed File
+        run: rm -f env-file

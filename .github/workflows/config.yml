@@ -16,7 +16,7 @@ jobs:
           echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
           echo "AWS_REGION=${{ vars.AWS_REGION }}" >> .env
-          echo "S3_BUCKET_NAME=${{ vars.S3_BUCKET_NAME }}" >> .env
+          echo "S3_BUCKET_NAME=${{ vars.IMG_BUCKET }}" >> .env
           cat .env
 
       - name: Debug - List Files

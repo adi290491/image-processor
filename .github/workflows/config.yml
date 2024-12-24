@@ -10,6 +10,8 @@ jobs:
     #  run:
     #    working-directory: ./env
     steps:
+      - name: Enable Debug Logs
+        run: echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -26,8 +28,8 @@ jobs:
       - name: Debug - List Files
         run: ls -la
 
-      - name: Rename .env for Upload
-        run: mv .env env-file
+      # - name: Rename .env for Upload
+      #   run: mv .env env-file
 
       - name: Upload .env File as Artifact
         uses: actions/upload-artifact@v4

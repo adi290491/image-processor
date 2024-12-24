@@ -27,16 +27,11 @@ const (
 
 func ConfigureAWS() (err error) {
 
-	// cfg, err = config.LoadDefaultConfig(context.TODO(),
-	// 	config.WithRegion(REGION),
-	// 	config.WithSharedConfigProfile("default"))
-
 	cfg, err = config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(os.Getenv("AWS_REGION")),
 		config.WithSharedCredentialsFiles([]string{".env"}),
 	)
 
-	// config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY")
 	if err != nil {
 		return fmt.Errorf("AWS configuration error: %v", err)
 	}

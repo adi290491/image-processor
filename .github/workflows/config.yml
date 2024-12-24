@@ -26,9 +26,12 @@ jobs:
       - name: Debug - List Files
         run: ls -la
 
+      - name: Rename .env for Upload
+        run: mv .env env-file
+
       - name: Upload .env File as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: env-file
-          path: .env
+          path: env-file
           if-no-files-found: error

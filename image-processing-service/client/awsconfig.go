@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"mime"
 	"mime/multipart"
 	"os"
@@ -13,22 +14,30 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/joho/godotenv"
 )
 
 var (
-	cfg aws.Config
+	cfg        aws.Config
+	IMG_BUCKET string
+	REGION     string
 )
 
-const (
-	IMG_BUCKET          = "orig-img-bucket"
-	TRANSFORMED_IMG_BKT = "transformation-img-bucket"
-	REGION              = "us-east-1"
-)
+func init() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Env error:", err)
+	}
+	IMG_BUCKET = os.Getenv("S3_BUCKET_NAME")
+	REGION = os.Getenv("AWS_REGION")
+
+}
 
 func ConfigureAWS() (err error) {
 
 	cfg, err = config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(os.Getenv("AWS_REGION")),
+		config.WithRegion(REGION),
 		config.WithSharedCredentialsFiles([]string{".env"}),
 	)
 

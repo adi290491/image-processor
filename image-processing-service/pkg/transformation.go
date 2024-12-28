@@ -23,14 +23,30 @@ type Crop struct {
 }
 
 type Transformation struct {
-	Resize *Resize `json:"resize,omitempty"`
-	Crop   *Crop   `json:"crop,omitempty"`
-	Rotate float64 `json:"rotate,omitempty"`
+	Resize  *Resize  `json:"resize,omitempty"`
+	Crop    *Crop    `json:"crop,omitempty"`
+	Rotate  float64  `json:"rotate,omitempty"`
+	Flip    string   `json:"flip,omitempty"`
+	Filters *Filters `json:"filters,omitempty"`
 }
 
 type TransformationRequest struct {
 	Key            string         `json:"image"`
+	OutputFileName string         `json:"output"`
 	Transformation Transformation `json:"transformation"`
+}
+
+type Filters struct {
+	Modulate *struct {
+		Brightness float64 `json:"brightness"`
+		Saturation float64 `json:"saturation"`
+		Hue        float64 `json:"hue"`
+	} `json:"modulation,omitempty"`
+	Gamma     float64 `json:"gamma,omitempty"`
+	Sharpness float64 `json:"sharpness,omitempty"`
+	Blur      float64 `json:"blur,omitempty"`
+	Grayscale bool    `json:"grayscale,omitempty"`
+	Format    string  `json:"format,omitempty"`
 }
 
 func (t *TransformationRequest) Apply() (response *client.UploadResponse, err error) {
@@ -41,7 +57,7 @@ func (t *TransformationRequest) Apply() (response *client.UploadResponse, err er
 		return nil, fmt.Errorf("file download error: %v", err)
 	}
 
-	outputFile, err := t.Transformation.transform(filename)
+	outputFile, err := t.Transformation.transform(filename, t.OutputFileName)
 
 	if err != nil {
 		return nil, fmt.Errorf("transformation error: %v", err)
@@ -65,7 +81,7 @@ func (t *TransformationRequest) Apply() (response *client.UploadResponse, err er
 	return
 }
 
-func (t *Transformation) transform(input string) (outputFile string, err error) {
+func (t *Transformation) transform(input, output string) (outputFile string, err error) {
 
 	imgRef, err := load(input)
 
@@ -96,7 +112,15 @@ func (t *Transformation) transform(input string) (outputFile string, err error) 
 		}
 	}
 
-	outputFile, err = save(imgRef, input)
+	if err = flip(imgRef, t.Flip); err != nil {
+		return "", fmt.Errorf("transformation error: %v", err)
+	}
+
+	if err = applyFilters(imgRef, t.Filters); err != nil {
+		return "", fmt.Errorf("transformation error: %v", err)
+	}
+
+	outputFile, err = save(imgRef, output)
 	if err != nil {
 		return "", fmt.Errorf("image save error: %v", err)
 	}
@@ -104,21 +128,21 @@ func (t *Transformation) transform(input string) (outputFile string, err error) 
 	return
 }
 
-func save(imgRef *vips.ImageRef, input string) (outputPath string, err error) {
-	outputPath = filepath.Join("./assets/temp", "processed-"+filepath.Base(input))
+func save(imgRef *vips.ImageRef, output string) (outputPath string, err error) {
+	// outputPath = filepath.Join("./assets/temp", "processed-"+filepath.Base(input))
 	ep := vips.NewDefaultJPEGExportParams()
 	imgBytes, _, err := imgRef.Export(ep)
 	if err != nil {
 		return "", err
 	}
 
-	err = os.WriteFile(outputPath, imgBytes, 0644)
+	err = os.WriteFile(output, imgBytes, 0644)
 
 	if err != nil {
 		return "", err
 	}
 
-	return outputPath, nil
+	return output, nil
 }
 
 func load(input string) (imgRef *vips.ImageRef, err error) {

@@ -4,12 +4,18 @@ import (
 	"image-processor/handler"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"     // swagger embed files
+	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 )
 
-func RegisterEndpoints(server *gin.Engine) {
+func RegisterEndpoints(r *gin.Engine) {
 
-	server.POST("/images/upload", handler.UploadImage)
-	server.GET("/images", handler.GetImage)
-	server.GET("/images/all", handler.ListImages)
-	server.POST("/images/transform", handler.HandleTransform)
+	imgHandlers := r.Group("/images")
+
+	imgHandlers.POST("/upload", handler.UploadImage)
+	imgHandlers.GET("/", handler.GetImage)
+	imgHandlers.GET("/all", handler.ListImages)
+	imgHandlers.POST("/transform", handler.HandleTransform)
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }

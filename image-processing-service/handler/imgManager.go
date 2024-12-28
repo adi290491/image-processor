@@ -10,6 +10,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// UploadImage godoc
+// @Summary      Upload Image
+// @Description  Upload an image file to the S3 bucket
+// @Tags         Images
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        image  formData  file  true  "Image File"
+// @Success      200   {object}  map[string]interface{}
+// @Failure      500   {object}  APIError "Error Info"
+// @Router       /images/upload [post]
 func UploadImage(c *gin.Context) {
 
 	fileHeader, err := c.FormFile("image")
@@ -30,6 +40,15 @@ func UploadImage(c *gin.Context) {
 
 }
 
+// @Summary      Fetch an image
+// @Description  Fetch an image file from S3 bucket based on the key
+// @Tags         Images
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param   	 key query string true "image file name"
+// @Success      200   {object}  map[string]interface{}
+// @Failure      500   {object}  APIError "Error Info"
+// @Router       /images [get]
 func GetImage(c *gin.Context) {
 
 	objKey := c.Query("key")
@@ -49,6 +68,14 @@ func GetImage(c *gin.Context) {
 
 }
 
+// @Summary      Fetch an image
+// @Description  Fetch a paginated list of all images from S3 bucket
+// @Tags         Images
+// @Accept       json
+// @Produce      json
+// @Success      200   {object}  map[string]interface{}
+// @Failure      500   {object}  APIError "Error Info"
+// @Router       /images/all [get]
 func ListImages(c *gin.Context) {
 
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))

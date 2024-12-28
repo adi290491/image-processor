@@ -30,6 +30,7 @@ type Transformation struct {
 	Filters *Filters `json:"filters,omitempty"`
 }
 
+// @Param        transformationRequest body transformations.TransformationRequest true "Transformation Payload"
 type TransformationRequest struct {
 	Key            string         `json:"image"`
 	OutputFileName string         `json:"output"`

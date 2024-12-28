@@ -1,4 +1,5 @@
 image-processing-service/imgproc
 image-processing-service/.vscode
 image-processing-service/assets/*
+image-processing-service/docs/*
 .env

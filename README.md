@@ -86,7 +86,7 @@ go run cmd/main.go
   * Microservices-based architecture with a Gateway and OAuth2 for authentication.
 * Performance Optimization
 * User Account Management
-* Front-End (e.g React, HTMX)
+* Front-End (e.g React, HTMX)/Mobile App (e.g iOS)
 * GraphQL based requests
 * Implement CI/CD pipeline
 * Expand Cloud Support
